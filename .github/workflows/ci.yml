@@ -23,7 +23,7 @@ jobs:
         run: python -m py_compile contracts/grant_guard.py
 
       - name: Lint
-        run: flake8 contracts/grant_guard.py --max-line-length=100
+        run: flake8 contracts/grant_guard.py
 
   frontend-lint-build:
     name: Frontend lint + build
