@@ -1,12 +1,14 @@
 # GrantGuard
 
-![CI](https://github.com/YOUR_USERNAME/grantguard/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/Naseer32/grantguard/actions/workflows/ci.yml/badge.svg)
+
+
 
 **Trust-minimized milestone verification for grants and bounty programs, built on GenLayer.**
 
 Live App: `TODO — deploy and paste your frontend URL`
 Contract: `0x4aB5f14BF3B95739587124a54A49D9AdaE9c3EdF` (GenLayer Studio / Studionet)
-Deploy tx: `TODO — paste your deployment tx hash`
+Deploy tx (create_campaign): `0xc6a707b5b272c14c8ca4f5b04010cb1a4245223bb73cec73050ac50b755977c1`
 Demo video: `TODO — 60–90s screen recording of the flow below`
 
 ## The Problem
@@ -102,7 +104,36 @@ npm run build
 
 Wire `GrantGuardPanel.jsx` into your app with genlayer-js, pointing
 `CONTRACT_ADDRESS` at the Studionet address from the deploy step above.
+## Live Verification Example
 
+A real run against the deployed contract, submission id `1`:
+
+| Step | Tx hash |
+|---|---|
+| `create_campaign` | `0xc6a707b5b272c14c8ca4f5b04010cb1a4245223bb73cec73050ac50b755977c1` |
+| `submit_milestone` | `0x1a93be4b769ce36d87c71fc45a26f435e6a3f54d72b44c61efa95fb358499889` |
+| `verify_submission` | `0xf1bdfdf23919af0d0f28e9c38600cefed0bed35c047b834cee02f8ba9aa61c89` |
+
+`evidence_url` submitted: this repository's GitHub page (`https://github.com/Naseer32/grantguard`).
+
+Result returned by `get_submission(1)`:
+
+\`\`\`json
+{
+  "id": 1,
+  "submitter": "0xbd6d84fc12ae3b9b3110fcc9eff91ddf5d59aa01",
+  "evidence_url": "https://github.com/Naseer32/grantguard",
+  "status": "rejected",
+  "confidence": "high",
+  "reasoning": "The evidence does not provide a working, publicly accessible demo URL as required by the campaign spec."
+}
+\`\`\`
+
+This is a deliberately included **correct rejection**, not a cherry-picked
+success: the campaign spec requires a live, working demo, and a source
+repository isn't one. The validators caught that with high confidence —
+concrete evidence the consensus judging is discriminating for real,
+not rubber-stamping whatever gets submitted.
 ## What's Next
 
 - Owner-configurable multiple concurrent campaigns (currently one
