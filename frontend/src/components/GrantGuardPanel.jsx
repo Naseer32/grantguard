@@ -11,7 +11,7 @@
 import { useState, useCallback } from "react";
 
 // TODO: replace with your deployed GrantGuard contract address
-const CONTRACT_ADDRESS = "0xYOUR_DEPLOYED_ADDRESS";
+const CONTRACT_ADDRESS = "0x4aB5f14BF3B95739587124a54A49D9AdaE9c3EdF";
 
 export default function GrantGuardPanel() {
   const [evidenceUrl, setEvidenceUrl] = useState("");

@@ -5,7 +5,7 @@
 **Trust-minimized milestone verification for grants and bounty programs, built on GenLayer.**
 
 Live App: `TODO — deploy and paste your frontend URL`
-Contract: `TODO — paste your GenLayer Studio (Studionet) contract address`
+Contract: `0x4aB5f14BF3B95739587124a54A49D9AdaE9c3EdF` (GenLayer Studio / Studionet)
 Deploy tx: `TODO — paste your deployment tx hash`
 Demo video: `TODO — 60–90s screen recording of the flow below`
 
