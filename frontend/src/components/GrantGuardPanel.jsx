@@ -76,7 +76,9 @@ export default function GrantGuardPanel() {
       }
       await new Promise((r) => setTimeout(r, delayMs));
     }
-    throw new Error("Timed out waiting for validator consensus");
+    throw new Error(
+  `Timed out waiting for validator consensus on submission #${id} (contract ${CONTRACT_ADDRESS})`
+);
   }, []);
 
   return (
@@ -88,8 +90,7 @@ export default function GrantGuardPanel() {
         <input
           value={evidenceUrl}
           onChange={(e) => setEvidenceUrl(e.target.value)}
-          placeholder="https://your-deployed-app.com"
-          style={{ width: "100%" }}
+          placeholder="https://your-deployed-app.com"          style={{ width: "100%" }}
         />
       </label>
 
