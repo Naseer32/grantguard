@@ -1,0 +1,19 @@
+{
+  "name": "grantguard-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "lint": "eslint src --ext .js,.jsx",
+    "build": "esbuild src/components/GrantGuardPanel.jsx --bundle --outfile=dist/GrantGuardPanel.bundle.js --loader:.jsx=jsx --jsx-factory=React.createElement --jsx-fragment=React.Fragment"
+  },
+  "dependencies": {
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.25.1",
+    "@babel/preset-react": "^7.24.7",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.35.0"
+  }
+}
