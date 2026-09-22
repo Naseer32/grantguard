@@ -4,9 +4,10 @@
   "version": "0.1.0",
   "scripts": {
     "lint": "eslint src --ext .js,.jsx",
-    "build": "esbuild src/components/GrantGuardPanel.jsx --bundle --outfile=dist/GrantGuardPanel.bundle.js --loader:.jsx=jsx --jsx-factory=React.createElement --jsx-fragment=React.Fragment"
+    "build": "esbuild src/components/GrantGuardPanel.jsx --bundle --outfile=dist/GrantGuardPanel.bundle.js --loader:.jsx=jsx --jsx-factory=React.createElement --jsx-fragment=React.Fragment --external:genlayer-js --external:genlayer-js/*"
   },
   "dependencies": {
+    "genlayer-js": "^1.1.8",
     "react": "^18.3.1"
   },
   "devDependencies": {
