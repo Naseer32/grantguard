@@ -7,8 +7,12 @@ GrantGuard
 Trust-minimized milestone verification for grants and bounty programs.
 
 WHAT IT DOES
-------------                                                                       A grant/bounty issuer creates a single Campaign with a spec ("what counts
-as done"). Builders submit an evidence_url (a deployed app, a PR, a demo)          against that spec. GrantGuard fetches the evidence and asks GenLayer               validators to independently judge pending -> verified/rejected, exactly            the kind of "does live evidence satisfy a stated brief" check a real
+------------
+A grant/bounty issuer creates a single Campaign with a spec ("what counts
+as done"). Builders submit an evidence_url (a deployed app, a PR, a demo)
+against that spec. GrantGuard fetches the evidence and asks GenLayer
+validators to independently judge pending -> verified/rejected, exactly
+the kind of "does live evidence satisfy a stated brief" check a real
 grants program, bounty board, or DAO milestone review needs.
 
 DESIGN NOTES
@@ -125,10 +129,6 @@ class GrantGuard(gl.Contract):
                 # Vite SPAs, etc.) time to actually render their content
                 # before the snapshot is taken — a bare fetch right after
                 # load would otherwise only see the empty initial shell.
-                # NOTE: verify wait_after_loaded's exact unit against the
-                # current GenLayer docs before relying on this value —
-                # written here as milliseconds, but confirm before relying
-                # on it for a slower-loading page.
                 content = gl.nondet.web.render(url, mode="html", wait_after_loaded=3000)
             except Exception as e:
                 content = ""
