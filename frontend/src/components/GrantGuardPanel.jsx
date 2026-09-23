@@ -4,7 +4,33 @@ import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
 const CONTRACT_ADDRESS = "0x4aB5f14BF3B95739587124a54A49D9AdaE9c3EdF";
+// GenLayer Studionet — MetaMask has no built-in knowledge of this chain,
+// so we have to explicitly ask it to switch (or add) it before signing.
+const STUDIONET_CHAIN_ID_HEX = "0xf22f"; // 61999 decimal
+const STUDIONET_PARAMS = {
+  chainId: STUDIONET_CHAIN_ID_HEX,
+  chainName: "GenLayer Studio",
+  nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
+  rpcUrls: ["https://studio.genlayer.com/api"],
+};
 
+async function ensureStudionet() {
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: STUDIONET_CHAIN_ID_HEX }],
+    });
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [STUDIONET_PARAMS],
+      });
+    } else {
+      throw switchError;
+    }
+  }
+}
 const readClient = createClient({ chain: studionet });
 
 export default function GrantGuardPanel() {
@@ -42,7 +68,8 @@ export default function GrantGuardPanel() {
         throw new Error("No browser wallet found — install MetaMask or a compatible wallet.");
       }
       const [address] = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const client = createClient({ chain: studionet, account: address, provider: window.ethereum });
+      await ensureStudionet();
+const client = createClient({ chain: studionet, account: address, provider: window.ethereum });
       await client.initializeConsensusSmartContract();
       setAccount({ address, client });
       setStatus("idle");
