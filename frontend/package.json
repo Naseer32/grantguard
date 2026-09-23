@@ -5,9 +5,8 @@
   "scripts": {
     "lint": "eslint src --ext .js,.jsx",
     "dev": "vite",
-    "app:build": "vite build",
-    "preview": "vite preview",
-    "build": "esbuild src/components/GrantGuardPanel.jsx --bundle --outfile=dist/GrantGuardPanel.bundle.js --loader:.jsx=jsx --jsx-factory=React.createElement --jsx-fragment=React.Fragment --external:genlayer-js --external:genlayer-js/*"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
