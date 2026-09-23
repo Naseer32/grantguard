@@ -3,7 +3,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
-const CONTRACT_ADDRESS = "0x4aB5f14BF3B95739587124a54A49D9AdaE9c3EdF";
+const CONTRACT_ADDRESS = "0x67D39844cbf8C9eFAE424b3535AC0b1047f5922b";
 // GenLayer Studionet — MetaMask has no built-in knowledge of this chain,
 // so we have to explicitly ask it to switch (or add) it before signing.
 const STUDIONET_CHAIN_ID_HEX = "0xf22f"; // 61999 decimal
