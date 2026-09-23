@@ -1,18 +1,38 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
 const CONTRACT_ADDRESS = "0x4aB5f14BF3B95739587124a54A49D9AdaE9c3EdF";
 
+const readClient = createClient({ chain: studionet });
+
 export default function GrantGuardPanel() {
   const [account, setAccount] = useState(null);
+  const [campaign, setCampaign] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [description, setDescription] = useState("");
   const [submissionId, setSubmissionId] = useState(null);
   const [status, setStatus] = useState("idle");
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    readClient
+      .readContract({ address: CONTRACT_ADDRESS, functionName: "get_campaign_info", args: [] })
+      .then(setCampaign)
+      .catch((err) => setError(err.message ?? String(err)));
+  }, []);
+
+  const refreshSubmissions = useCallback(async (address) => {
+    const list = await readClient.readContract({
+      address: CONTRACT_ADDRESS,
+      functionName: "get_submissions_by_submitter",
+      args: [address],
+    });
+    setSubmissions(list);
+  }, []);
 
   const connectWallet = useCallback(async () => {
     setStatus("connecting");
@@ -26,11 +46,12 @@ export default function GrantGuardPanel() {
       await client.initializeConsensusSmartContract();
       setAccount({ address, client });
       setStatus("idle");
+      await refreshSubmissions(address);
     } catch (err) {
       setError(err.message ?? String(err));
       setStatus("error");
     }
-  }, []);
+  }, [refreshSubmissions]);
 
   const handleSubmit = useCallback(async () => {
     if (!account) {
@@ -38,7 +59,7 @@ export default function GrantGuardPanel() {
       setStatus("error");
       return;
     }
-    const { client } = account;
+    const { client, address } = account;
     setStatus("submitting");
     setError(null);
     try {
@@ -62,6 +83,7 @@ export default function GrantGuardPanel() {
       });
       const newId = campaignInfo.submission_count;
       setSubmissionId(newId);
+      setCampaign(campaignInfo);
       setStatus("pending_consensus");
 
       const verifyTxHash = await client.writeContract({
@@ -84,14 +106,25 @@ export default function GrantGuardPanel() {
       });
       setResult(sub);
       setStatus("done");
+      await refreshSubmissions(address);
     } catch (err) {
       setError(err.message ?? String(err));
       setStatus("error");
     }
-  }, [account, evidenceUrl, description]);
+  }, [account, evidenceUrl, description, refreshSubmissions]);
 
   return (
     <div style={{ maxWidth: 480, fontFamily: "sans-serif" }}>
+      {campaign && (
+        <div style={{ background: "#f4f4f4", padding: "0.75rem 1rem", borderRadius: 6, marginBottom: "1rem" }}>
+          <strong>{campaign.title}</strong>
+          <p style={{ margin: "0.25rem 0 0", fontSize: "0.9em", color: "#444" }}>{campaign.spec}</p>
+          <p style={{ margin: "0.25rem 0 0", fontSize: "0.8em", color: "#888" }}>
+            {campaign.submission_count} submission(s) so far
+          </p>
+        </div>
+      )}
+
       <h2>Submit Milestone Evidence</h2>
 
       {!account ? (
@@ -132,6 +165,22 @@ export default function GrantGuardPanel() {
       )}
 
       {status === "error" && <p style={{ color: "red" }}>{error}</p>}
+
+      {account && submissions.length > 0 && (
+        <div style={{ marginTop: "1.5rem" }}>
+          <h3>Your Submissions</h3>
+          <ul style={{ paddingLeft: "1.2rem" }}>
+            {submissions.map((s) => (
+              <li key={s.id} style={{ marginBottom: "0.5rem" }}>
+                #{s.id} — <strong>{String(s.status).toUpperCase()}</strong>
+                {s.confidence ? ` (${s.confidence} confidence)` : ""}
+                <br />
+                <span style={{ fontSize: "0.85em", color: "#666" }}>{s.evidence_url}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
