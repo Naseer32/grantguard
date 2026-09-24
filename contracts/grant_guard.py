@@ -121,7 +121,7 @@ class GrantGuard(gl.Contract):
         url = sub.evidence_url
         description = sub.description
 
-       def leader_fn():
+        def leader_fn():
             error_detail = ""
             try:
                 # mode="html" (not "text") captures the actual DOM.
