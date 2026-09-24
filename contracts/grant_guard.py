@@ -121,24 +121,29 @@ class GrantGuard(gl.Contract):
         url = sub.evidence_url
         description = sub.description
 
-        def leader_fn():
+       def leader_fn():
             error_detail = ""
             try:
-                # mode="html" (not "text") captures the actual DOM, and
-                # wait_after_loaded gives client-rendered pages (React/
-                # Vite SPAs, etc.) time to actually render their content
-                # before the snapshot is taken — a bare fetch right after
-                # load would otherwise only see the empty initial shell.
-                content = gl.nondet.web.render(url, mode="html", wait_after_loaded=3000)
+                # mode="html" (not "text") captures the actual DOM.
+                # (Previously also passed wait_after_loaded — dropped
+                # after it produced a native "2: inval..." error, which
+                # points at that being an invalid/unsupported argument
+                # in this GenLayer version rather than a real reachability
+                # problem with the URL.)
+                content = gl.nondet.web.render(url, mode="html")
             except Exception as e:
                 content = ""
                 error_detail = str(e)
 
             if not content:
+                fallback_reason = (
+                    error_detail if error_detail
+                    else "no content returned, no exception raised"
+                )
                 return {
                     "verdict": False,
                     "confidence": "low",
-                    "reasoning": "Fetch failed: " + (error_detail if error_detail else "no content returned, no exception raised"),
+                    "reasoning": "Fetch failed: " + fallback_reason,
                 }
 
             snippet = content[:6000]
