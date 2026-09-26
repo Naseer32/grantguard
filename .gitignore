@@ -5,3 +5,8 @@ __pycache__/
 .env
 .env.local
 .vercel
+__pycache__/
+*.pyc
+contracts/grant_guard.py.bak
+genlayer-project-boilerplate/
+.env*

@@ -1,14 +1,13 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
-const CONTRACT_ADDRESS = "0x67D39844cbf8C9eFAE424b3535AC0b1047f5922b";
-// GenLayer Studionet — MetaMask has no built-in knowledge of this chain,
-// so we have to explicitly ask it to switch (or add) it before signing.
-const STUDIONET_CHAIN_ID_HEX = "0xf22f"; // 61999 decimal
-const STUDIONET_PARAMS = {
-  chainId: STUDIONET_CHAIN_ID_HEX,
+const CONTRACT_ADDRESS = "0x3ff31Fa386b3ECb4259762e2dDdb78411E7Abf31";
+const CHAIN_ID = "0xf22f";
+
+const CHAIN_PARAMS = {
+  chainId: CHAIN_ID,
   chainName: "GenLayer Studio",
   nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
   rpcUrls: ["https://studio.genlayer.com/api"],
@@ -18,196 +17,601 @@ async function ensureStudionet() {
   try {
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: STUDIONET_CHAIN_ID_HEX }],
+      params: [{ chainId: CHAIN_ID }],
     });
-  } catch (switchError) {
-    if (switchError.code === 4902) {
+  } catch (error) {
+    if (error.code === 4902) {
       await window.ethereum.request({
         method: "wallet_addEthereumChain",
-        params: [STUDIONET_PARAMS],
+        params: [CHAIN_PARAMS],
       });
     } else {
-      throw switchError;
+      throw error;
     }
   }
 }
-const readClient = createClient({ chain: studionet });
 
-export default function GrantGuardPanel() {
-  const [account, setAccount] = useState(null);
-  const [campaign, setCampaign] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
-  const [evidenceUrl, setEvidenceUrl] = useState("");
-  const [description, setDescription] = useState("");
-  const [submissionId, setSubmissionId] = useState(null);
-  const [status, setStatus] = useState("idle");
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+function Card({ title, children }) {
+  return (
+    <div
+      style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 18,
+        padding: 22,
+        marginBottom: 18,
+        background: "#fff",
+        boxShadow: "0 8px 30px rgba(15, 23, 42, 0.06)",
+      }}
+    >
+      <h3
+        style={{
+          margin: "0 0 18px",
+          fontSize: 17,
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
 
-  useEffect(() => {
-    readClient
-      .readContract({ address: CONTRACT_ADDRESS, functionName: "get_campaign_info", args: [] })
-      .then(setCampaign)
-      .catch((err) => setError(err.message ?? String(err)));
-  }, []);
+function Input({ label, ...props }) {
+  return (
+    <label style={{ display: "block", marginBottom: 14 }}>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          marginBottom: 7,
+          color: "#374151",
+        }}
+      >
+        {label}
+      </div>
+      <input
+        {...props}
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          padding: "12px 14px",
+          border: "1px solid #d1d5db",
+          borderRadius: 11,
+          background: "#f9fafb",
+          color: "#111827",
+          outline: "none",
+          fontSize: 14,
+        }}
+      />
+    </label>
+  );
+}
 
-  const refreshSubmissions = useCallback(async (address) => {
-    const list = await readClient.readContract({
-      address: CONTRACT_ADDRESS,
-      functionName: "get_submissions_by_submitter",
-      args: [address],
-    });
-    setSubmissions(list);
-  }, []);
+function Textarea({ label, ...props }) {
+  return (
+    <label style={{ display: "block", marginBottom: 14 }}>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          marginBottom: 7,
+          color: "#374151",
+        }}
+      >
+        {label}
+      </div>
+      <textarea
+        {...props}
+        rows={4}
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          padding: "12px 14px",
+          border: "1px solid #d1d5db",
+          borderRadius: 11,
+          background: "#f9fafb",
+          color: "#111827",
+          resize: "vertical",
+          outline: "none",
+          fontSize: 14,
+          lineHeight: 1.5,
+        }}
+      />
+    </label>
+  );
+}
 
-  const connectWallet = useCallback(async () => {
-    setStatus("connecting");
-    setError(null);
-    try {
-      if (!window.ethereum) {
-        throw new Error("No browser wallet found — install MetaMask or a compatible wallet.");
-      }
-      const [address] = await window.ethereum.request({ method: "eth_requestAccounts" });
-      await ensureStudionet();
-const client = createClient({ chain: studionet, account: address, provider: window.ethereum });
-      await client.initializeConsensusSmartContract();
-      setAccount({ address, client });
-      setStatus("idle");
-      await refreshSubmissions(address);
-    } catch (err) {
-      setError(err.message ?? String(err));
-      setStatus("error");
-    }
-  }, [refreshSubmissions]);
-
-  const handleSubmit = useCallback(async () => {
-    if (!account) {
-      setError("Connect your wallet first.");
-      setStatus("error");
-      return;
-    }
-    const { client, address } = account;
-    setStatus("submitting");
-    setError(null);
-    try {
-      const submitTxHash = await client.writeContract({
-        address: CONTRACT_ADDRESS,
-        functionName: "submit_milestone",
-        args: [evidenceUrl, description],
-        value: 0n,
-      });
-      await client.waitForTransactionReceipt({
-        hash: submitTxHash,
-        status: TransactionStatus.ACCEPTED,
-        retries: 30,
-        interval: 3000,
-      });
-
-      const campaignInfo = await client.readContract({
-        address: CONTRACT_ADDRESS,
-        functionName: "get_campaign_info",
-        args: [],
-      });
-      const newId = campaignInfo.submission_count;
-      setSubmissionId(newId);
-      setCampaign(campaignInfo);
-      setStatus("pending_consensus");
-
-      const verifyTxHash = await client.writeContract({
-        address: CONTRACT_ADDRESS,
-        functionName: "verify_submission",
-        args: [newId],
-        value: 0n,
-      });
-      await client.waitForTransactionReceipt({
-        hash: verifyTxHash,
-        status: TransactionStatus.FINALIZED,
-        retries: 60,
-        interval: 5000,
-      });
-
-      const sub = await client.readContract({
-        address: CONTRACT_ADDRESS,
-        functionName: "get_submission",
-        args: [newId],
-      });
-      setResult(sub);
-      setStatus("done");
-      await refreshSubmissions(address);
-    } catch (err) {
-      setError(err.message ?? String(err));
-      setStatus("error");
-    }
-  }, [account, evidenceUrl, description, refreshSubmissions]);
+function Button({ children, variant = "primary", ...props }) {
+  const styles = {
+    primary: {
+      background: "#16a34a",
+      color: "#fff",
+      border: "1px solid #16a34a",
+    },
+    dark: {
+      background: "#111827",
+      color: "#fff",
+      border: "1px solid #111827",
+    },
+    danger: {
+      background: "#fff",
+      color: "#dc2626",
+      border: "1px solid #fecaca",
+    },
+    warning: {
+      background: "#fff",
+      color: "#b45309",
+      border: "1px solid #fde68a",
+    },
+    secondary: {
+      background: "#f8fafc",
+      color: "#374151",
+      border: "1px solid #e5e7eb",
+    },
+  };
 
   return (
-    <div style={{ maxWidth: 480, fontFamily: "sans-serif" }}>
-      {campaign && (
-        <div style={{ background: "#f4f4f4", padding: "0.75rem 1rem", borderRadius: 6, marginBottom: "1rem" }}>
-          <strong>{campaign.title}</strong>
-          <p style={{ margin: "0.25rem 0 0", fontSize: "0.9em", color: "#444" }}>{campaign.spec}</p>
-          <p style={{ margin: "0.25rem 0 0", fontSize: "0.8em", color: "#888" }}>
-            {campaign.submission_count} submission(s) so far
-          </p>
+    <button
+      {...props}
+      style={{
+        width: "100%",
+        padding: "11px 15px",
+        borderRadius: 11,
+        fontSize: 13,
+        fontWeight: 750,
+        cursor: props.disabled ? "not-allowed" : "pointer",
+        opacity: props.disabled ? 0.55 : 1,
+        transition: "all 0.15s ease",
+        ...styles[variant],
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function GrantGuardPanel() {
+  const [account, setAccount] = useState("");
+  const [client, setClient] = useState(null);
+  const [readClient] = useState(() => createClient({ chain: studionet }));
+
+  const [grantId, setGrantId] = useState("");
+  const [milestoneId, setMilestoneId] = useState("");
+
+  const [grantTitle, setGrantTitle] = useState("");
+  const [grantDescription, setGrantDescription] = useState("");
+
+  const [recipient, setRecipient] = useState("");
+  const [milestoneTitle, setMilestoneTitle] = useState("");
+  const [requirements, setRequirements] = useState("");
+  const [reward, setReward] = useState("");
+
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [evidenceDescription, setEvidenceDescription] = useState("");
+
+  const [loadedGrant, setLoadedGrant] = useState(null);
+  const [loadedMilestone, setLoadedMilestone] = useState(null);
+
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const run = async (action) => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await action();
+    } catch (err) {
+      setError(err?.message ?? String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      throw new Error("No compatible browser wallet found.");
+    }
+
+    await ensureStudionet();
+
+    const [address] = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    const newClient = createClient({
+      chain: studionet,
+      account: address,
+      provider: window.ethereum,
+    });
+
+    await newClient.initializeConsensusSmartContract();
+
+    setAccount(address);
+    setClient(newClient);
+    setMessage("Wallet connected.");
+  };
+
+  const waitFor = async (hash) => {
+    await client.waitForTransactionReceipt({
+      hash,
+      status: TransactionStatus.FINALIZED,
+      retries: 60,
+      interval: 5000,
+    });
+  };
+
+  const createGrant = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "create_grant",
+        args: [grantTitle, grantDescription],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+
+      setMessage("Grant created successfully. Use the next grant ID in the form.");
+    });
+
+  const addMilestone = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+      if (!grantId) throw new Error("Enter a grant ID first.");
+
+      const amount = BigInt(reward);
+
+      if (amount <= 0n) {
+        throw new Error("Reward must be greater than 0.");
+      }
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "add_milestone",
+        args: [grantId, recipient, milestoneTitle, requirements],
+        value: amount,
+      });
+
+      await waitFor(hash);
+
+      setMessage("Milestone created successfully. Use the next milestone ID in the form.");
+    });
+
+  const freezeRequirements = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "freeze_milestone_requirements",
+        args: [grantId, milestoneId],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("Milestone requirements frozen.");
+    });
+
+  const submitEvidence = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "submit_evidence",
+        args: [
+          account,
+          grantId,
+          milestoneId,
+          evidenceUrl,
+          evidenceDescription,
+        ],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("Evidence submitted.");
+    });
+
+  const requestVerification = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "request_verification",
+        args: [account, grantId, milestoneId],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("Verification requested.");
+    });
+
+  const verifyMilestone = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "verify_milestone",
+        args: [account, grantId, milestoneId],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("GenLayer verification completed.");
+    });
+
+  const releaseMilestone = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "release_milestone",
+        args: [account, grantId, milestoneId],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("Milestone reward released.");
+    });
+
+  const challengeMilestone = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "challenge_milestone",
+        args: [account, grantId, milestoneId],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("Milestone challenged.");
+    });
+
+  const finalizeMilestone = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "finalize_milestone",
+        args: [account, grantId, milestoneId],
+        value: 0n,
+      });
+
+      await waitFor(hash);
+      setMessage("Milestone finalized.");
+    });
+
+  const loadGrant = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const data = await readClient.readContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "get_grant",
+        args: [account, grantId],
+      });
+
+      setLoadedGrant(data);
+    });
+
+  const loadMilestone = () =>
+    run(async () => {
+      if (!client) throw new Error("Connect your wallet first.");
+
+      const data = await readClient.readContract({
+        address: CONTRACT_ADDRESS,
+        functionName: "get_milestone",
+        args: [account, grantId, milestoneId],
+      });
+
+      setLoadedMilestone(data);
+    });
+
+  return (
+    <div
+      style={{
+        maxWidth: 720,
+        margin: "0 auto",
+        fontFamily: "sans-serif",
+        color: "#111827",
+      }}
+    >
+      <Card title="Wallet">
+        {!account ? (
+          <Button variant="dark" onClick={() => run(connectWallet)} disabled={busy}>
+            {busy ? "Connecting..." : "Connect Wallet"}
+          </Button>
+        ) : (
+          <div>
+            <strong>Connected</strong>
+            <div style={{ fontSize: 12, marginTop: 5 }}>{account}</div>
+          </div>
+        )}
+      </Card>
+
+      <Card title="Create Grant">
+        <Input
+          label="Title"
+          value={grantTitle}
+          onChange={(e) => setGrantTitle(e.target.value)}
+          placeholder="Grant title"
+        />
+        <Textarea
+          label="Description"
+          value={grantDescription}
+          onChange={(e) => setGrantDescription(e.target.value)}
+          placeholder="What is this grant for?"
+        />
+        <Button onClick={createGrant} disabled={!account || busy}>
+          Create Grant
+        </Button>
+      </Card>
+
+      <Card title="Add Milestone">
+        <Input
+          label="Grant ID"
+          value={grantId}
+          onChange={(e) => setGrantId(e.target.value)}
+          placeholder="grant-1"
+        />
+        <Input
+          label="Recipient Address"
+          value={recipient}
+          onChange={(e) => setRecipient(e.target.value)}
+          placeholder="0x..."
+        />
+        <Input
+          label="Milestone Title"
+          value={milestoneTitle}
+          onChange={(e) => setMilestoneTitle(e.target.value)}
+          placeholder="Working frontend"
+        />
+        <Textarea
+          label="Requirements"
+          value={requirements}
+          onChange={(e) => setRequirements(e.target.value)}
+          placeholder="Frontend must connect wallet and submit evidence."
+        />
+        <Input
+          label="Reward in wei"
+          value={reward}
+          onChange={(e) => setReward(e.target.value)}
+          placeholder="1000000000000000000"
+        />
+        <Button onClick={addMilestone} disabled={!account || busy}>
+          Fund Milestone
+        </Button>
+      </Card>
+
+      <Card title="Milestone Workflow">
+        <Input
+          label="Milestone ID"
+          value={milestoneId}
+          onChange={(e) => setMilestoneId(e.target.value)}
+          placeholder="milestone-1"
+        />
+
+        <div style={{ display: "grid", gap: 8 }}>
+          <Button variant="secondary" onClick={freezeRequirements} disabled={!account || busy}>
+            Freeze Requirements
+          </Button>
+
+          <Input
+            label="Evidence URL"
+            value={evidenceUrl}
+            onChange={(e) => setEvidenceUrl(e.target.value)}
+            placeholder="https://..."
+          />
+
+          <Textarea
+            label="Evidence Description"
+            value={evidenceDescription}
+            onChange={(e) => setEvidenceDescription(e.target.value)}
+            placeholder="Explain what the evidence proves."
+          />
+
+          <Button onClick={submitEvidence} disabled={!account || busy}>
+            Submit Evidence
+          </Button>
+
+          <Button variant="warning" onClick={requestVerification} disabled={!account || busy}>
+            Request Verification
+          </Button>
+
+          <Button onClick={verifyMilestone} disabled={!account || busy}>
+            Run GenLayer Verification
+          </Button>
+
+          <Button onClick={releaseMilestone} disabled={!account || busy}>
+            Release Verified Reward
+          </Button>
+
+          <Button variant="danger" onClick={challengeMilestone} disabled={!account || busy}>
+            Challenge Rejection
+          </Button>
+
+          <Button variant="danger" onClick={finalizeMilestone} disabled={!account || busy}>
+            Finalize Rejected Milestone
+          </Button>
         </div>
-      )}
+      </Card>
 
-      <h2>Submit Milestone Evidence</h2>
+      <Card title="View State">
+        <Input
+          label="Grant ID"
+          value={grantId}
+          onChange={(e) => setGrantId(e.target.value)}
+          placeholder="grant-1"
+        />
 
-      {!account ? (
-        <button onClick={connectWallet} disabled={status === "connecting"}>
-          {status === "connecting" ? "Connecting…" : "Connect Wallet"}
-        </button>
-      ) : (
-        <p style={{ fontSize: "0.85em", color: "#555" }}>Connected: {account.address}</p>
-      )}
+        <Input
+          label="Milestone ID"
+          value={milestoneId}
+          onChange={(e) => setMilestoneId(e.target.value)}
+          placeholder="milestone-1"
+        />
 
-      <label>
-        Evidence URL
-        <input value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)}
-          placeholder="https://your-deployed-app.com" style={{ width: "100%" }} />
-      </label>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Button
+            variant="secondary"
+            onClick={loadGrant}
+            disabled={!account || !grantId || busy}
+          >
+            Load Grant
+          </Button>
 
-      <label>
-        Description
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-          placeholder="What does this evidence demonstrate?" style={{ width: "100%" }} />
-      </label>
-
-      <button onClick={handleSubmit}
-        disabled={!account || status === "submitting" || status === "pending_consensus"}>
-        Submit for verification
-      </button>
-
-      {status === "pending_consensus" && (
-        <p>Submission #{submissionId} — validators are reaching consensus…</p>
-      )}
-
-      {status === "done" && result && (
-        <div>
-          <h3>Result: {String(result.status).toUpperCase()}</h3>
-          <p>Confidence: {result.confidence}</p>
-          <p>Reasoning: {result.reasoning}</p>
+          <Button
+            variant="secondary"
+            onClick={loadMilestone}
+            disabled={!account || !grantId || !milestoneId || busy}
+          >
+            Load Milestone
+          </Button>
         </div>
-      )}
 
-      {status === "error" && <p style={{ color: "red" }}>{error}</p>}
+        {loadedGrant && (
+          <pre
+            style={{
+              marginTop: 15,
+              padding: 12,
+              background: "#f3f4f6",
+              overflowX: "auto",
+            }}
+          >
+            {JSON.stringify(loadedGrant, null, 2)}
+          </pre>
+        )}
 
-      {account && submissions.length > 0 && (
-        <div style={{ marginTop: "1.5rem" }}>
-          <h3>Your Submissions</h3>
-          <ul style={{ paddingLeft: "1.2rem" }}>
-            {submissions.map((s) => (
-              <li key={s.id} style={{ marginBottom: "0.5rem" }}>
-                #{s.id} — <strong>{String(s.status).toUpperCase()}</strong>
-                {s.confidence ? ` (${s.confidence} confidence)` : ""}
-                <br />
-                <span style={{ fontSize: "0.85em", color: "#666" }}>{s.evidence_url}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {loadedMilestone && (
+          <pre
+            style={{
+              marginTop: 15,
+              padding: 12,
+              background: "#f3f4f6",
+              overflowX: "auto",
+            }}
+          >
+            {JSON.stringify(loadedMilestone, null, 2)}
+          </pre>
+        )}
+      </Card>
+
+      {busy && <p>Processing transaction...</p>}
+      {message && <p style={{ color: "green" }}>{message}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
 }
