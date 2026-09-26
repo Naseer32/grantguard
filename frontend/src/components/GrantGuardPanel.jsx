@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
@@ -57,6 +58,8 @@ function Card({ title, children }) {
   );
 }
 
+Card.propTypes = { title: PropTypes.string.isRequired, children: PropTypes.node.isRequired };
+
 function Input({ label, ...props }) {
   return (
     <label style={{ display: "block", marginBottom: 14 }}>
@@ -87,6 +90,8 @@ function Input({ label, ...props }) {
     </label>
   );
 }
+
+Input.propTypes = { label: PropTypes.string.isRequired };
 
 function Textarea({ label, ...props }) {
   return (
@@ -121,6 +126,8 @@ function Textarea({ label, ...props }) {
     </label>
   );
 }
+
+Textarea.propTypes = { label: PropTypes.string.isRequired };
 
 function Button({ children, variant = "primary", ...props }) {
   const styles = {
@@ -170,6 +177,12 @@ function Button({ children, variant = "primary", ...props }) {
     </button>
   );
 }
+
+Button.propTypes = {
+  children: PropTypes.node.isRequired,
+  variant: PropTypes.oneOf(["primary", "dark", "danger", "warning", "secondary"]),
+  disabled: PropTypes.bool,
+};
 
 export default function GrantGuardPanel() {
   const [account, setAccount] = useState("");
