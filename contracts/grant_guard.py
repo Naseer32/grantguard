@@ -260,7 +260,9 @@ class GrantGuard(gl.Contract):
         )
 
         if milestone.recipient != gl.message.sender_address.as_hex:
-            raise gl.vm.UserError("[EXPECTED] only the milestone recipient can request verification")
+            raise gl.vm.UserError(
+                "[EXPECTED] only the milestone recipient can request verification"
+            )
 
         if not milestone.requirements_frozen:
             raise gl.vm.UserError("[EXPECTED] milestone requirements must be frozen first")
