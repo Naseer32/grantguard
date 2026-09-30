@@ -4,7 +4,7 @@ GrantGuard
 
 Trust-minimized milestone verification for grants and bounty programs, built on GenLayer.
 
-Live App: https://grantguard-seven.vercel.app
+Live App: "https://grantguard-seven.vercel.app"
 Network: GenLayer Bradbury Testnet
 Contract: "0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247"
 
@@ -58,48 +58,138 @@ Live Deployment
 Item| Value
 Network| GenLayer Bradbury Testnet
 Contract| "0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247"
-Live frontend| https://grantguard-seven.vercel.app
+Live frontend| "https://grantguard-seven.vercel.app"
 Campaign| GenLayer Hackathon Milestone Check
 Campaign specification| The deployed URL must show a working, publicly accessible demo of the submitted project.
-Campaign pool shown in app| 1.0000 GEN
+Campaign pool| 1.0000 GEN
 Reward per milestone| 0.1000 GEN
 
 Bradbury Test Evidence
 
-The following transactions were performed against the Bradbury deployment. Transaction status and validator output are recorded as shown by the explorer.
+The following transactions were executed against the Bradbury deployment.
 
-Campaign setup
+1. Campaign creation
 
-Action| Transaction
-"create_campaign"| "0x43a2ecdf671b9d2df6cc65d06597f41b618bc4b399285e7fa53f0328fd7c8bea"
-"fund_campaign"| "0x3016c5d210f64e5510aaf193ce7ce9b696ce05e14735f8ec0639d10c6a47959e"
+"create_campaign"
 
-The campaign was created with the title GenLayer Hackathon Milestone Check and funded with 1.00 GEN.
+Transaction:
 
-Initial verification attempts
+"0x43a2ecdf671b9d2df6cc65d06597f41b618bc4b399285e7fa53f0328fd7c8bea"
 
-The first evidence submissions were rejected by validator consensus. The returned explanations identified issues such as a source repository instead of a working demo, static page content, and missing visible proof of live functionality.
+The campaign was created with the title:
 
-These results helped identify the need to ensure the deployed frontend visibly loads its wallet connection, campaign data, and submission workflow before evidence is evaluated.
+GenLayer Hackathon Milestone Check
 
-Successful verification and reward transfer
+Specification:
 
-A later submission used the live GrantGuard frontend as evidence.
+«The deployed URL must show a working, publicly accessible demo of the submitted project.»
 
-Step| Method| Transaction
-Submit evidence| "submit_milestone"| "0x36c1b1db3a23b032008e540794abfe716ee6c6e8a704251bb9c5e1c352d63d25"
-Verify Submission #2| "verify_submission(2)"| "0xded9a3e190955313428e0c918b4024f47dbac7e49bd3c8dfb7a01c5d5727782b"
-Claim reward| "claim_reward(2)"| "0x8d1ec473d692ec630fb05936e5d7ed0bef7082938993fab480b6fa40eef8bc25"
+2. Campaign funding
 
-The verification transaction returned:
+"fund_campaign"
 
-confidence$high | The deployed URL shows a working, publicly accessible demo of the submitted project, GrantGuard, which connects a wallet, displays live campaign spec and pool balance, and allows users to submit and verify evidence.
+Transaction:
 
-The claim transaction showed an internal transfer of 0.10 GEN to the submitter wallet:
+"0x3016c5d210f64e5510aaf193ce7ce9b696ce05e14735f8ec0639d10c6a47959e"
 
-"0x53b20BeADADe01b46a3fb5bdbC85D3A7B0f12A96"
+The campaign was funded with 1.00 GEN.
 
-The explorer showed the transactions as "accepted" after their consensus waiting windows, and displayed the reward transfer for the claim transaction.
+3. Milestone submission
+
+"submit_milestone"
+
+Transaction:
+
+"0x36c1b1db3a23b032008e540794abfe716ee6c6e8a704251bb9c5e1c352d63d25"
+
+Evidence URL:
+
+"https://grantguard-seven.vercel.app"
+
+The submission was finalized on Bradbury and became Submission #2.
+
+4. Validator verification
+
+"verify_submission(2)"
+
+Transaction:
+
+"0xded9a3e190955313428e0c918b4024f47dbac7e49bd3c8dfb7a01c5d5727782b"
+
+Final status:
+
+finalized
+
+Validator confidence:
+
+high
+
+Validator result:
+
+The deployed URL shows a working, publicly accessible demo of the submitted project, GrantGuard, which connects a wallet, displays live campaign spec and pool balance, and allows users to submit and verify evidence.
+
+The verification transaction finalized with 15 L2 transactions and 9,033,471 gas.
+
+GenLayer chain transaction:
+
+"0x2358d011180bc2bfddc8ebea29756a06ccc419d1c87b40a19e0b2635c84aaa83"
+
+5. Reward claim
+
+"claim_reward(2)"
+
+Transaction:
+
+"0x8d1ec473d692ec630fb05936e5d7ed0bef7082938993fab480b6fa40eef8bc25"
+
+The transaction included an internal transfer of:
+
+0.10 GEN
+
+to the submitting wallet:
+
+"0x53b20BeADADe01b46a3fb5bdbC85D3a7B0f12A96"
+
+GenLayer chain transaction:
+
+"0xb0286b9390ac4246ce2adc6a00a17008fcd4d2251e31934b6effcc2a7e53b744"
+
+End-to-End Result
+
+The Bradbury test demonstrated the complete grant workflow:
+
+create_campaign
+      ↓
+fund_campaign
+      ↓
+submit_milestone
+      ↓
+verify_submission(2)
+      ↓
+validator consensus: high confidence
+      ↓
+verification finalized
+      ↓
+claim_reward(2)
+      ↓
+0.10 GEN transfer
+
+This test provides an end-to-end on-chain record covering campaign creation, funding, evidence submission, GenLayer validator verification, and reward settlement.
+
+Initial Verification Findings
+
+Earlier verification attempts were intentionally retained during development because they exposed real evidence-capture limitations.
+
+Initial validator rejections included:
+
+- A GitHub source repository submitted instead of a working deployed demo.
+- The live SPA being fetched as plain text before its client-side content rendered.
+- HTML evidence being captured before asynchronous on-chain campaign data became visible.
+- A GenLayer Studio Explorer page also being captured without its dynamically loaded contract content.
+
+These tests showed that client-rendered applications can be difficult for an evidence fetcher to evaluate when important content is loaded asynchronously.
+
+The successful Bradbury verification demonstrates that the current deployed frontend provided sufficient visible evidence for the validator to determine that the application was a working public demo.
 
 Repository Structure
 
@@ -120,16 +210,17 @@ Architecture
 
 Layer| Responsibility
 "contracts/grant_guard.py"| Campaign state, milestone submissions, verification, and reward settlement
-"frontend/src/components/GrantGuardPanel.jsx"| Wallet connection, evidence submission, campaign display, and verification workflow
+"frontend/src/components/GrantGuardPanel.jsx"| Wallet connection, campaign display, evidence submission, and result display
 GenLayer validators| Evaluate submitted evidence against the campaign specification
 Bradbury testnet| Contract execution and transaction records
 
 Design Notes
 
-- Campaign-specific evaluation: Validators assess evidence against a defined campaign specification rather than an unstructured claim.
+- Campaign-specific evaluation: Validators assess evidence against a defined campaign specification.
 - Explicit lifecycle checks: Contract methods enforce their required state before changing campaign or submission data.
 - Consensus-friendly results: Verification relies on agreed result fields rather than requiring independently generated reasoning text to match exactly.
 - On-chain settlement: Reward transfers are handled by the contract after the claim conditions are satisfied.
+- Public evidence: The deployed application itself can be submitted as evidence for validator evaluation.
 
 CI
 
@@ -142,7 +233,7 @@ Local Development
 
 Contract
 
-1. Open GenLayer Studio: https://studio.genlayer.com
+1. Open GenLayer Studio: "https://studio.genlayer.com"
 2. Load "contracts/grant_guard.py".
 3. Deploy to the intended GenLayer network.
 4. Record the deployed contract address.
@@ -156,12 +247,12 @@ npm run dev
 
 Known Limitations and Future Work
 
-- Add an in-app verification action for existing submissions, so users do not need to call "verify_submission" separately through Studio.
-- Improve the frontend's handling and display of pending transaction states.
+- Add an in-app verification action for existing submissions so users do not need to call "verify_submission" separately through Studio.
+- Improve frontend handling and display of pending transaction states.
 - Support multiple concurrent campaigns.
 - Add an appeal or re-verification workflow for disputed results.
 - Investigate version-specific support for "wait_after_loaded" in "gl.nondet.web.render()" to improve evidence capture of client-rendered pages.
 
 Demo Video
 
-A short screen recording of the campaign setup, evidence submission, verification result, and reward claim can be added here when available.
+A short screen recording of the campaign setup, evidence submission, finalized validator verification, and reward claim can be added here when available.
