@@ -133,6 +133,15 @@ const ui = {
   },
 };
 
+function execFailed(r) {
+  const name = String(
+    r?.txExecutionResultName ??
+      r?.consensus_data?.leader_receipt?.[0]?.execution_result ??
+      ""
+  ).toUpperCase();
+  return name.includes("ERROR");
+}
+
 function Section({ title, startOpen = true, children }) {
   const [open, setOpen] = useState(startOpen);
   return (
@@ -222,12 +231,16 @@ function MethodsSection({ account, onChanged }) {
       setTxs((p) => [{ hash, method: functionName, time, status: "pending" }, ...p]);
       const mark = (status) => setTxs((p) => p.map((t) => (t.hash === hash ? { ...t, status } : t)));
       try {
-        await client.waitForTransactionReceipt({
+        const receipt = await client.waitForTransactionReceipt({
           hash,
           status: TransactionStatus.ACCEPTED,
           retries: 40,
           interval: 4000,
         });
+        if (execFailed(receipt)) {
+          mark("failed");
+          return `Failed: execution error\n${hash}`;
+        }
         mark("accepted");
         onChanged();
         return `Accepted\n${hash}`;
