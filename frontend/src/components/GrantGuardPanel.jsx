@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 // GrantGuardPanel.jsx
 //
 // Real genlayer-js wiring against a deployed GrantGuard contract, on
