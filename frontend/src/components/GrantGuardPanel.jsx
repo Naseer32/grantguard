@@ -15,14 +15,8 @@ import { createClient } from "genlayer-js";
 import { testnetBradbury } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
-const CONTRACT_ADDRESS = "0x63D2a37beF35Ff877D887ca0e65D430EdE8cfE55";
+const CONTRACT_ADDRESS = "0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247";
 
-// GenLayer Bradbury testnet — MetaMask has no built-in knowledge of this
-// chain, so we have to explicitly ask it to switch (or add) it before
-// signing. Chain ID and RPC confirmed from GenLayer's own project
-// tooling (genlayer-js/genlayer-py chain configs); block explorer URL
-// taken from other GenLayer projects' READMEs, not independently
-// re-verified here — double check if MetaMask rejects it.
 const BRADBURY_CHAIN_ID_HEX = "0x107d"; // 4221 decimal
 const BRADBURY_PARAMS = {
   chainId: BRADBURY_CHAIN_ID_HEX,
@@ -39,8 +33,6 @@ async function ensureBradbury() {
       params: [{ chainId: BRADBURY_CHAIN_ID_HEX }],
     });
   } catch (switchError) {
-    // 4902 = MetaMask doesn't have this chain yet — add it, then it'll
-    // already be selected.
     if (switchError.code === 4902) {
       await window.ethereum.request({
         method: "wallet_addEthereumChain",
@@ -52,8 +44,6 @@ async function ensureBradbury() {
   }
 }
 
-// Read-only client — no wallet needed, talks straight to the RPC.
-// Used for anything anyone can see: campaign info, submission history.
 const readClient = createClient({ chain: testnetBradbury });
 
 export default function GrantGuardPanel() {
@@ -145,9 +135,9 @@ export default function GrantGuardPanel() {
       });
       await client.waitForTransactionReceipt({
         hash: verifyTxHash,
-        status: TransactionStatus.FINALIZED,
-        retries: 60,
-        interval: 5000,
+        status: TransactionStatus.ACCEPTED,
+        retries: 40,
+        interval: 4000,
       });
 
       const sub = await client.readContract({
