@@ -34,7 +34,7 @@ How It Works
 
 Owner:
   create_campaign(title, spec)
-  fund_campaign(amount)
+  fund_campaign(reward_per_milestone)
 
 Builder:
   submit_milestone(evidence_url, description)
@@ -61,7 +61,7 @@ Contract| "0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247"
 Live frontend| "https://grantguard-seven.vercel.app"
 Campaign| GenLayer Hackathon Milestone Check
 Campaign specification| The deployed URL must show a working, publicly accessible demo of the submitted project.
-Campaign pool| 1.0000 GEN
+Campaign pool| Initial 1.0000 GEN (0.9000 GEN after the first claim)
 Reward per milestone| 0.1000 GEN
 
 Bradbury Test Evidence
@@ -148,7 +148,7 @@ The transaction included an internal transfer of:
 
 to the submitting wallet:
 
-"0x53b20BeADADe01b46a3fb5bdbC85D3a7B0f12A96"
+"0x53b20BeADADe01b46a3fb5bdbC85D3A7B0f12A96"
 
 GenLayer chain transaction:
 
@@ -175,6 +175,18 @@ claim_reward(2)
 0.10 GEN transfer
 
 This test provides an end-to-end on-chain record covering campaign creation, funding, evidence submission, GenLayer validator verification, and reward settlement.
+
+### Double-claim protection
+
+A second `claim_reward(2)` was sent after the reward was paid.
+
+Transaction:
+
+`0xb55ef801d86f916bf6aa3fb1024798e1743c8b8aaa374affe25e612143089973`
+
+The contract rejected it with an execution error and no transfer message.
+`get_submission(2)` shows `paid: true` and `get_campaign_info()` shows the
+pool at 0.9 GEN, so the reward was paid exactly once.
 
 Initial Verification Findings
 
@@ -247,8 +259,7 @@ npm run dev
 
 Known Limitations and Future Work
 
-- Add an in-app verification action for existing submissions so users do not need to call "verify_submission" separately through Studio.
-- Improve frontend handling and display of pending transaction states.
+- The app shows "Accepted" once validators agree, even when contract execution failed (e.g. a rejected double claim). Check the explorer for the execution result.
 - Support multiple concurrent campaigns.
 - Add an appeal or re-verification workflow for disputed results.
 - Investigate version-specific support for "wait_after_loaded" in "gl.nondet.web.render()" to improve evidence capture of client-rendered pages.
