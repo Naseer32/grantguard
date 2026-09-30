@@ -69,10 +69,9 @@ const WRITE_METHODS = [
     params: [
       { n: "title", t: "str" },
       { n: "spec", t: "str" },
-      { n: "reward_per_milestone", t: "gen" },
     ],
   },
-  { name: "fund_campaign", params: [], payable: true },
+  { name: "fund_campaign", params: [{ n: "reward_per_milestone", t: "gen" }], payable: true },
   {
     name: "submit_milestone",
     params: [
