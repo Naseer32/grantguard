@@ -1,269 +1,200 @@
-GrantGuard
+# GrantGuard
+
 
-"CI" (https://github.com/Naseer32/grantguard/actions/workflows/ci.yml/badge.svg)
 
-Trust-minimized milestone verification for grants and bounty programs, built on GenLayer.
-
-Live App: "https://grantguard-seven.vercel.app"
-Network: GenLayer Bradbury Testnet
-Contract: "0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247"
-
-Overview
-
-GrantGuard is a grant and bounty verification application built with a GenLayer Intelligent Contract.
-
-A campaign owner defines a milestone specification and funds a reward pool. Builders submit deployed URLs and descriptions as evidence. GenLayer validators evaluate the submitted evidence against the campaign specification. Approved submissions can claim their configured reward through the contract.
-
-GrantGuard keeps milestone evaluation separate from deterministic on-chain campaign accounting and reward settlement.
-
-The Problem
-
-Grant and bounty programs often depend on manual review to determine whether submitted work satisfies a specification. This can create review bottlenecks and leave decisions difficult to inspect after the fact.
-
-The Solution
-
-GrantGuard provides an on-chain campaign and submission workflow:
-
-- Campaign owners define the requirement.
-- Builders submit evidence URLs and descriptions.
-- Validators evaluate evidence against the campaign specification.
-- The contract records verification results.
-- Approved submissions can claim their configured reward.
-
-How It Works
-
-Owner:
-  create_campaign(title, spec)
-  fund_campaign(reward_per_milestone)
-
-Builder:
-  submit_milestone(evidence_url, description)
-
-Verifier:
-  verify_submission(submission_id)
-  -> evidence is evaluated against the campaign spec
-  -> validator result is recorded
-
-Submitter:
-  claim_reward(submission_id)
-  -> transfers the configured reward when claim conditions are met
-
-Read methods:
-  get_campaign_info()
-  get_submission(submission_id)
-  get_submissions_by_submitter(address)
-
-Live Deployment
-
-Item| Value
-Network| GenLayer Bradbury Testnet
-Contract| "0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247"
-Live frontend| "https://grantguard-seven.vercel.app"
-Campaign| GenLayer Hackathon Milestone Check
-Campaign specification| The deployed URL must show a working, publicly accessible demo of the submitted project.
-Campaign pool| Initial 1.0000 GEN (0.9000 GEN after the first claim)
-Reward per milestone| 0.1000 GEN
-
-Bradbury Test Evidence
-
-The following transactions were executed against the Bradbury deployment.
-
-1. Campaign creation
-
-"create_campaign"
-
-Transaction:
-
-"0x43a2ecdf671b9d2df6cc65d06597f41b618bc4b399285e7fa53f0328fd7c8bea"
-
-The campaign was created with the title:
-
-GenLayer Hackathon Milestone Check
-
-Specification:
-
-«The deployed URL must show a working, publicly accessible demo of the submitted project.»
-
-2. Campaign funding
-
-"fund_campaign"
-
-Transaction:
-
-"0x3016c5d210f64e5510aaf193ce7ce9b696ce05e14735f8ec0639d10c6a47959e"
-
-The campaign was funded with 1.00 GEN.
-
-3. Milestone submission
-
-"submit_milestone"
-
-Transaction:
-
-"0x36c1b1db3a23b032008e540794abfe716ee6c6e8a704251bb9c5e1c352d63d25"
-
-Evidence URL:
-
-"https://grantguard-seven.vercel.app"
-
-The submission was finalized on Bradbury and became Submission #2.
-
-4. Validator verification
-
-"verify_submission(2)"
-
-Transaction:
-
-"0xded9a3e190955313428e0c918b4024f47dbac7e49bd3c8dfb7a01c5d5727782b"
-
-Final status:
-
-finalized
-
-Validator confidence:
-
-high
-
-Validator result:
-
-The deployed URL shows a working, publicly accessible demo of the submitted project, GrantGuard, which connects a wallet, displays live campaign spec and pool balance, and allows users to submit and verify evidence.
-
-The verification transaction finalized with 15 L2 transactions and 9,033,471 gas.
-
-GenLayer chain transaction:
-
-"0x2358d011180bc2bfddc8ebea29756a06ccc419d1c87b40a19e0b2635c84aaa83"
-
-5. Reward claim
-
-"claim_reward(2)"
-
-Transaction:
-
-"0x8d1ec473d692ec630fb05936e5d7ed0bef7082938993fab480b6fa40eef8bc25"
-
-The transaction included an internal transfer of:
-
-0.10 GEN
-
-to the submitting wallet:
-
-"0x53b20BeADADe01b46a3fb5bdbC85D3A7B0f12A96"
-
-GenLayer chain transaction:
-
-"0xb0286b9390ac4246ce2adc6a00a17008fcd4d2251e31934b6effcc2a7e53b744"
-
-End-to-End Result
-
-The Bradbury test demonstrated the complete grant workflow:
-
-create_campaign
-      ↓
-fund_campaign
-      ↓
-submit_milestone
-      ↓
-verify_submission(2)
-      ↓
-validator consensus: high confidence
-      ↓
-verification finalized
-      ↓
-claim_reward(2)
-      ↓
-0.10 GEN transfer
-
-This test provides an end-to-end on-chain record covering campaign creation, funding, evidence submission, GenLayer validator verification, and reward settlement.
-
-### Double-claim protection
-
-A second `claim_reward(2)` was sent after the reward was paid.
-
-Transaction:
-
-`0xb55ef801d86f916bf6aa3fb1024798e1743c8b8aaa374affe25e612143089973`
-
-The contract rejected it with an execution error and no transfer message.
-`get_submission(2)` shows `paid: true` and `get_campaign_info()` shows the
-pool at 0.9 GEN, so the reward was paid exactly once.
-
-Initial Verification Findings
-
-Earlier verification attempts were intentionally retained during development because they exposed real evidence-capture limitations.
-
-Initial validator rejections included:
-
-- A GitHub source repository submitted instead of a working deployed demo.
-- The live SPA being fetched as plain text before its client-side content rendered.
-- HTML evidence being captured before asynchronous on-chain campaign data became visible.
-- A GenLayer Studio Explorer page also being captured without its dynamically loaded contract content.
-
-These tests showed that client-rendered applications can be difficult for an evidence fetcher to evaluate when important content is loaded asynchronously.
-
-The successful Bradbury verification demonstrates that the current deployed frontend provided sufficient visible evidence for the validator to determine that the application was a working public demo.
-
-Repository Structure
-
-grantguard/
+![CI](https://github.com/Naseer32/grantguard/actions/workflows/ci.yml/badge.svg)
+
+
+
+Open grants and bounties with AI-verified milestones, built on GenLayer.
+Anyone can create a funded campaign. Anyone can submit evidence. GenLayer
+validators judge it against the campaign spec, and the contract pays the reward.
+
+- **Live app:** https://grantguard-seven.vercel.app
+- **Network:** GenLayer Bradbury Testnet
+- **Contract:** [`0x849973aB0AA7e353c8AE6eBD5B53C8dAf8281979`](https://explorer-bradbury.genlayer.com/address/0x849973aB0AA7e353c8AE6eBD5B53C8dAf8281979)
+
+## Overview
+
+Grant and bounty programs usually depend on manual review to decide whether
+submitted work meets a requirement. That creates bottlenecks and decisions that
+are hard to inspect later.
+
+GrantGuard moves the whole loop on-chain:
+
+1. A creator opens a **campaign**: a title, a spec ("what counts as done"), a
+   fixed reward per milestone, and a GEN reward pool.
+2. A builder **submits** a public URL and a description as evidence.
+3. Anyone can trigger **verification**. GenLayer validators fetch the evidence
+   page and independently judge it against the spec.
+4. The submitter of a verified submission **claims** the reward from that
+   campaign's pool.
+5. The creator can **close** the campaign and **withdraw** the part of the pool
+   that is not reserved for pending or unclaimed submissions.
+
+Judgment and money are deliberately separate. `verify_submission` only decides;
+funds move only in `claim_reward` and `withdraw_remaining`, which are fully
+deterministic.
+
+## Using the app
+
+1. Open the live app. Campaigns are visible without a wallet.
+2. Click **Connect Wallet** (top right). The app switches your wallet to Bradbury.
+3. **Create** a campaign, or open one and **Submit evidence**.
+4. Click **Verify with validators** on a pending submission. This usually takes
+   a few minutes.
+5. If verified, the submitter clicks **Claim**.
+6. Creators manage their campaign (add funds, close, withdraw) from the campaign page.
+7. The **Contract** tab lets you call every method directly, like GenLayer Studio.
+
+## Contract methods
+
+| Method | Who | What it does |
+| --- | --- | --- |
+| `create_campaign(title, spec, reward_per_milestone)` payable | anyone | Creates a campaign; attached GEN becomes its pool |
+| `fund_campaign(campaign_id)` payable | anyone | Tops up an open campaign |
+| `submit_milestone(campaign_id, evidence_url, description)` | anyone except the creator | Submits evidence |
+| `verify_submission(submission_id)` | anyone | Validators judge the evidence against the spec |
+| `claim_reward(submission_id)` | the submitter | Pays the reward from the campaign pool, once |
+| `close_campaign(campaign_id)` | creator | Stops new submissions |
+| `withdraw_remaining(campaign_id)` | creator, after closing | Returns the unreserved part of the pool |
+
+Views: `get_campaign_count`, `get_campaign`, `get_campaigns`,
+`get_campaigns_by_creator`, `get_campaign_submissions`, `get_submission`,
+`get_submissions_by_submitter`.
+
+## Safety rules enforced by the contract
+
+- The reward per milestone is fixed at creation, so it cannot be changed under a submitter.
+- A creator cannot submit to their own campaign.
+- A wallet with a verified submission in a campaign cannot submit again there.
+- Only the submitter can claim, only once, and only if the pool covers the reward.
+- State is updated before funds are sent.
+- A creator can never withdraw funds reserved for pending or verified-but-unpaid submissions.
+- Consensus requires agreement only on the decision (verdict and confidence),
+  not on reasoning text or the raw fetched page.
+- Evidence text is passed to the validators as data, with instructions to ignore
+  any attempt inside it to change their behavior.
+
+## Bradbury test evidence (current contract)
+
+Executed against `0x849973aB0AA7e353c8AE6eBD5B53C8dAf8281979` with two wallets
+(creator and builder).
+
+| Step | Result | Transaction |
+| --- | --- | --- |
+| `create_campaign` | ok | `0xc23295d2446a27d0b08c7db14f5aec55637dba4534d71c1f48b03ca957591684` |
+| `submit_milestone` (builder) | ok | `0x8c55440106c0233e3464940f010f9e4d8a67b5de25bdc744512067ea2cc4e76c` |
+| `verify_submission` | verified | `0xba912c5c562ff3e3502c05e32e6f59cf90cda22855bb97056930cf04a5f0adf6` |
+| `claim_reward` | reward paid | `0xb13981be218f6ebd0e32317ab621d5207d4a9c8343c3e9caa0193f37f92e4b36` |
+| `claim_reward` again | rejected (double claim) | `0x93807c432023819042ef2aa327f633db94bfd3907a87c477da2919bfea1d8d51` |
+| `submit_milestone` by the creator | rejected | `0xe26ccb8e7a7a6f51e56fdec478dc17515338a851c2e4d4997d2193ff1d359dfe` |
+| `submit_milestone` by the builder again | rejected | `0x6aef5f5741d755f5b297ebf4631b25536d75cf912a8461adf767c41ce49d65a3` |
+| `close_campaign` | ok | `0x92f86386acbfcb34167710b733697aadcddea10c84ca573b0468aee4aa6cb23b` |
+| `withdraw_remaining` | remainder returned to the creator | `0x3a1406a57e3df114af3d12b55365cda088930fc66ddfe7aaab8abf1e3ec8a43c` |
+
+The rejected transactions show the contract's protections working: no second
+payout, no self-submission, no repeat submission after a verified one.
+
+## Findings during development
+
+Real evidence-capture problems were found and fixed. They are kept here on purpose.
+
+- **Client-rendered pages.** A single-page app fetched as plain text, or captured
+  before its on-chain data loaded, could be judged as empty.
+- **Heavy HTML heads.** An earlier v2 deployment rejected a valid GitHub
+  repository because the contract sent only the first 6000 characters of raw
+  HTML, which on GitHub is navigation and scripts, not the README. The current
+  contract judges the visible page text and falls back to the rendered HTML with
+  scripts, styles and tags removed when the text is nearly empty.
+- **Slow RPC confirmations.** The frontend now retries transaction confirmation
+  polling and always refreshes its data after an action, so a temporary RPC
+  error no longer looks like a failed transaction.
+
+## Version 1 (single campaign), kept as history
+
+The first deployment was a single-campaign, owner-only contract at
+`0x8Fc59D3a4dB29418eEb181964Ac62f39Bdb21247`. It proved the core loop on
+Bradbury:
+
+| Step | Transaction |
+| --- | --- |
+| `create_campaign` | `0x43a2ecdf671b9d2df6cc65d06597f41b618bc4b399285e7fa53f0328fd7c8bea` |
+| `fund_campaign` (1 GEN) | `0x3016c5d210f64e5510aaf193ce7ce9b696ce05e14735f8ec0639d10c6a47959e` |
+| `submit_milestone` | `0x36c1b1db3a23b032008e540794abfe716ee6c6e8a704251bb9c5e1c352d63d25` |
+| `verify_submission` | `0xded9a3e190955313428e0c918b4024f47dbac7e49bd3c8dfb7a01c5d5727782b` |
+| `claim_reward` (0.10 GEN paid) | `0x8d1ec473d692ec630fb05936e5d7ed0bef7082938993fab480b6fa40eef8bc25` |
+| second `claim_reward` (rejected) | `0xb55ef801d86f916bf6aa3fb1024798e1743c8b8aaa374affe25e612143089973` |
+
+Version 2 replaced it so that anyone, not only one owner, can run campaigns.
+
+## Repository structuregrantguard/
 ├── contracts/
-│   └── grant_guard.py
+│   └── grant_guard.py          # GrantGuard v2 intelligent contract
 ├── frontend/
-│   ├── src/
-│   │   └── components/
-│   │       └── GrantGuardPanel.jsx
-│   ├── package.json
-│   └── .eslintrc.json
-└── .github/
-    └── workflows/
-        └── ci.yml
+│   └── src/
+│       ├── App.jsx             # header, wallet connect, navigation
+│       ├── lib.js              # contract address, reads, transactions
+│       └── components/
+│           ├── Campaigns.jsx   # campaign list, create form, my activity
+│           ├── CampaignView.jsx# campaign page, submit, verify, claim, manage
+│           ├── Methods.jsx     # Studio-style method explorer
+│           └── ui.jsx          # shared UI pieces
+├── tests/
+└── .github/workflows/ci.yml## Local development
 
-Architecture
+Contract: open GenLayer Studio, load `contracts/grant_guard.py`, deploy to the
+target network, then set `CONTRACT_ADDRESS` in `frontend/src/lib.js`.
 
-Layer| Responsibility
-"contracts/grant_guard.py"| Campaign state, milestone submissions, verification, and reward settlement
-"frontend/src/components/GrantGuardPanel.jsx"| Wallet connection, campaign display, evidence submission, and result display
-GenLayer validators| Evaluate submitted evidence against the campaign specification
-Bradbury testnet| Contract execution and transaction records
+Frontend:
 
-Design Notes
+```bash
+cd frontend
+npm install
+npm run dev## Local development
 
-- Campaign-specific evaluation: Validators assess evidence against a defined campaign specification.
-- Explicit lifecycle checks: Contract methods enforce their required state before changing campaign or submission data.
-- Consensus-friendly results: Verification relies on agreed result fields rather than requiring independently generated reasoning text to match exactly.
-- On-chain settlement: Reward transfers are handled by the contract after the claim conditions are satisfied.
-- Public evidence: The deployed application itself can be submitted as evidence for validator evaluation.
+Contract: open GenLayer Studio, load `contracts/grant_guard.py`, deploy to the
+target network, then set `CONTRACT_ADDRESS` in `frontend/src/lib.js`.
 
-CI
+Frontend:
 
-The GitHub Actions workflow runs on pushes and pull requests.
+```bash
+cd frontend
+npm install
+npm run dev## Local development
 
-- Contract lint: checks the GenLayer contract.
-- Frontend lint and build: installs frontend dependencies, runs ESLint, and builds the Vite application.
+Contract: open GenLayer Studio, load `contracts/grant_guard.py`, deploy to the
+target network, then set `CONTRACT_ADDRESS` in `frontend/src/lib.js`.
 
-Local Development
+Frontend:
 
-Contract
-
-1. Open GenLayer Studio: "https://studio.genlayer.com"
-2. Load "contracts/grant_guard.py".
-3. Deploy to the intended GenLayer network.
-4. Record the deployed contract address.
-5. Configure the frontend to use that address and network.
-
-Frontend
-
+```bash
 cd frontend
 npm install
 npm run dev
+## Local development
 
-Known Limitations and Future Work
+Contract: open GenLayer Studio, load `contracts/grant_guard.py`, deploy to the
+target network, then set `CONTRACT_ADDRESS` in `frontend/src/lib.js`.
 
-- The app shows "Accepted" once validators agree, even when contract execution failed (e.g. a rejected double claim). Check the explorer for the execution result.
-- Support multiple concurrent campaigns.
-- Add an appeal or re-verification workflow for disputed results.
-- Investigate version-specific support for "wait_after_loaded" in "gl.nondet.web.render()" to improve evidence capture of client-rendered pages.
+Frontend:
 
-Demo Video
-
-A short screen recording of the campaign setup, evidence submission, finalized validator verification, and reward claim can be added here when available.
+```bash
+cd frontend
+npm install
+npm run dev
+CI runs the contract lint, then frontend lint and build, on every push and pull request.
+Known limitations and future work
+Testnet only, and unaudited. Do not use it with funds you cannot lose.
+Validators see the first part of the evidence page's text, so key proof should
+be visible near the top of the page.
+Evidence must be publicly reachable without a login.
+Judgment depends on the quality of the campaign spec, so creators should write
+specs that can be checked from a public page.
+Anyone can submit, so a popular campaign can receive spam. Adding a deposit or
+a per-wallet limit is a natural next step.
+There is no appeal or re-verification flow for a rejected submission; the
+builder can submit new evidence.
+Verification cost is paid by whoever triggers it.
+Demo video
+Add the link here when the recording is ready.
