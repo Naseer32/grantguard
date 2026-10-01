@@ -34,10 +34,10 @@ export default function CampaignView({ id, account, onBack }) {
     setBusy(label);
     try {
       await fn();
-      await load();
     } catch (e) {
       setError(errText(e));
     }
+    await load();
     setBusy("");
   }
 

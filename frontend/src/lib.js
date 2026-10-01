@@ -28,7 +28,13 @@ export const gen = (wei) => Number((Number(wei) / 1e18).toFixed(4));
 export const short = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 export const same = (a, b) => !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
 export const isHttp = (u) => /^https?:\/\//i.test(String(u ?? ""));
-export const errText = (e) => String(e?.message ?? e).slice(0, 300);
+export const errText = (e) => {
+  const m = String(e?.message ?? e);
+  if (m.includes("getTransactionAllData")) {
+    return "The network was slow to confirm your transaction. It may still go through: wait a minute, then refresh.";
+  }
+  return m.slice(0, 300);
+};
 
 // "0.5" -> 500000000000000000n (no floating point)
 export function toWei(v) {
@@ -45,7 +51,10 @@ export function execFailed(r) {
   return name.includes("ERROR");
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // Send a write transaction and wait until validators accept it.
+// Network hiccups while polling are retried instead of failing the action.
 export async function send(account, functionName, args = [], value = 0n) {
   const hash = await account.client.writeContract({
     address: CONTRACT_ADDRESS,
@@ -53,12 +62,24 @@ export async function send(account, functionName, args = [], value = 0n) {
     args,
     value,
   });
-  const receipt = await account.client.waitForTransactionReceipt({
-    hash,
-    status: TransactionStatus.ACCEPTED,
-    retries: 60,
-    interval: 4000,
-  });
+  let receipt = null;
+  for (let attempt = 0; attempt < 4 && !receipt; attempt += 1) {
+    try {
+      receipt = await account.client.waitForTransactionReceipt({
+        hash,
+        status: TransactionStatus.ACCEPTED,
+        retries: 30,
+        interval: 4000,
+      });
+    } catch {
+      await sleep(5000);
+    }
+  }
+  if (!receipt) {
+    throw new Error(
+      `Transaction ${hash.slice(0, 10)}… was sent but is still confirming. Refresh in a minute to see the result.`
+    );
+  }
   if (execFailed(receipt)) {
     throw new Error("The contract rejected this action (execution error).");
   }
