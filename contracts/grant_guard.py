@@ -108,7 +108,9 @@ class GrantGuard(gl.Contract):
             raise gl.vm.UserError("[EXPECTED] reward_per_milestone must be greater than 0")
         amount = int(gl.message.value)
         if amount < reward:
-            raise gl.vm.UserError("[EXPECTED] Attach at least one reward of GEN to fund the campaign")
+            raise gl.vm.UserError(
+                "[EXPECTED] Attach at least one reward of GEN to fund the campaign"
+            )
 
         new_id = u256(len(self.campaigns) + 1)
         self.campaigns.append(Campaign(
@@ -179,13 +181,17 @@ class GrantGuard(gl.Contract):
             raise gl.vm.UserError("[EXPECTED] campaign is closed")
         sender = gl.message.sender_address
         if sender == camp.creator:
-            raise gl.vm.UserError("[EXPECTED] The campaign creator cannot submit to their own campaign")
+            raise gl.vm.UserError(
+                "[EXPECTED] The campaign creator cannot submit to their own campaign"
+            )
         if not evidence_url.strip():
             raise gl.vm.UserError("[EXPECTED] evidence_url cannot be empty")
 
         for s in self.submissions:
             if s.campaign_id == campaign_id and s.submitter == sender and s.status == "verified":
-                raise gl.vm.UserError("[EXPECTED] You already have a verified submission in this campaign")
+                raise gl.vm.UserError(
+                    "[EXPECTED] You already have a verified submission in this campaign"
+                )
 
         new_id = u256(len(self.submissions) + 1)
         self.submissions.append(Submission(
